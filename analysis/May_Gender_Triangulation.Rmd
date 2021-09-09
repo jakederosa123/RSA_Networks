@@ -1,0 +1,69 @@
+---
+title: "Two-Week Triangulation"
+author: "Jacob DeRosa"
+date: "1/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=F, message=F, echo =F, include=F}
+source("C:/Users/jacob.derosa/Documents/Github/CRISIS_Follow_Up/Scripts/crisis_functions.R")
+```
+
+```{r, Cleaning and Life Changes Set Up, warning=F, message=F, include = F}
+
+#April Sample: T1
+adult_uk_og = read.csv("C:/Users/jacob.derosa/Documents/CRISIS/Part_1/Updated_Regsam_Splits/Updated_Datasets/Adult_Combined/Adult_UK_Updated_07272020.csv") %>% og_fix("Adult_UK")
+adult_us_og = read.csv("C:/Users/jacob.derosa/Documents/CRISIS/Part_1/Updated_Regsam_Splits/Updated_Datasets/Adult_Combined/Adult_US_Updated_07272020.csv") %>% og_fix("Adult_US") 
+parent_uk_og = read.csv("C:/Users/jacob.derosa/Documents/CRISIS/Part_1/Updated_Regsam_Splits/Updated_Datasets/Parent_Combined/Parent_UK_Updated_07272020.csv") %>% og_fix("Parent_UK") 
+parent_us_og = read.csv("C:/Users/jacob.derosa/Documents/CRISIS/Part_1/Updated_Regsam_Splits/Updated_Datasets/Parent_Combined/Parent_US_Updated_07272020.csv") %>% og_fix("Parent_US") 
+
+#May Sample: T2
+adult_two = read.csv("~/GitHub/CRISIS_Follow_Up/Data/CRISISAdultSelfRepor_DATA_2020-05-05_1559.csv") %>% og_fix("Adult", twoweek = T) %>% 
+  clean_dat("Adult", twoweek=T) %>% filter(!duplicated(prolific_academic_id))
+parent_two = read.csv("~/GitHub/CRISIS_Follow_Up/Data/CRISISParentCaregive_DATA_2020-05-05_1558.csv") %>% og_fix("Parent", twoweek = T) %>% 
+  clean_dat("Parent", twoweek=T) %>% filter(!duplicated(prolific_academic_id))
+
+# November Sample: T3
+adult=read.csv("C:/Users/jacob.derosa/Documents/Github/CRISIS_Follow_Up/Data/crisis_adult_12032020.csv", stringsAsFactors = F) %>% clean_dat("Adult") %>% nov_fix()
+parent=read.csv("C:/Users/jacob.derosa/Documents/Github/CRISIS_Follow_Up/Data/crisis_parent_12032020.csv", stringsAsFactors = F) %>% clean_dat("Parent")  %>% nov_fix()
+
+```
+
+Merge April and May timepoints to extarct Sex 
+```{r}
+adult_april_may_uk = merge(adult_uk_og %>% select(prolific_academic_id, O_sex_cat), adult_two %>% select(prolific_academic_id), by=c("prolific_academic_id")) %>% triag_clean()
+adult_april_may_us = merge(adult_us_og %>% select(prolific_academic_id, O_sex_cat), adult_two %>% select(prolific_academic_id), by=c("prolific_academic_id")) %>% triag_clean()
+parent_april_may_uk = merge(parent_uk_og %>% select(prolific_academic_id, O_sex_cat), parent_two %>% select(prolific_academic_id), by=c("prolific_academic_id")) %>% triag_clean()
+parent_april_may_us = merge(parent_us_og %>% select(prolific_academic_id, O_sex_cat), parent_two %>% select(prolific_academic_id), by=c("prolific_academic_id")) %>% triag_clean()
+
+adult_april_may = rbind(adult_april_may_uk, adult_april_may_us)
+parent_april_may = rbind(parent_april_may_uk, parent_april_may_us)
+```
+
+Merge April and May timepoints to extarct Sex 
+```{r}
+adult_nov_may = merge(adult %>% select(prolific_academic_id, Gender), adult_two %>% select(prolific_academic_id), by=c("prolific_academic_id")) %>% filter(!duplicated(prolific_academic_id))
+parent_nov_may = merge(parent %>% select(prolific_academic_id, Gender), parent_two %>% select(prolific_academic_id), by=c("prolific_academic_id"))%>% filter(!duplicated(prolific_academic_id))
+```
+
+Bind 3 Timepoints
+```{r}
+adult_combined = rbind(adult_nov_may, adult_april_may) %>% filter(!duplicated(prolific_academic_id))
+parent_combined = rbind(parent_nov_may, parent_april_may) %>% filter(!duplicated(prolific_academic_id))
+```
+
+Merge Binded Timepoints back with Twoweek
+```{r}
+adult_two_final = adult_two %>% full_join(adult_combined) %>% filter(!duplicated(prolific_academic_id))
+parent_two_final = parent_two %>% full_join(parent_combined) %>% filter(!duplicated(prolific_academic_id))
+```
+
+```{r}
+path = "C:/Users/jacob.derosa/Documents/Github/CRISIS_Follow_Up/Data/"
+save(adult_two_final, path, "adult_may_01152021"); save(parent_two_final, path, "parent_may_01152021")
+```
+
